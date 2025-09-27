@@ -1,0 +1,31 @@
+name: update-ics
+on:
+  schedule:
+    - cron: "0 2 * * 1"   # Mondays 02:00 UTC (~03:00 CET/CEST-ish)
+  workflow_dispatch:      # allow manual run
+permissions:
+  contents: write         # allow pushing updates to the repo
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python ical.py
+        env:
+          MOHU_DISTRICT: ${{ secrets.MOHU_DISTRICT }}
+          MOHU_PUBLIC_PLACE: ${{ secrets.MOHU_PUBLIC_PLACE }}
+          MOHU_HOUSE_NUMBER: ${{ secrets.MOHU_HOUSE_NUMBER }}
+      - name: Commit & push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add mohu.ics
+          git diff --cached --quiet && echo "No changes" && exit 0
+          git commit -m "auto: weekly ICS update"
+          git push
