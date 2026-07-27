@@ -62,7 +62,9 @@ def get_mohu_data():
         resp = s.post(url, headers=search_headers, data=search_payload)
 
         data = resp.json()
-        html = data["ajax/calSearchResults"]
+        # The site's AJAX response key has changed before (e.g. "ajax/calSearchResults" -> ".results"),
+        # so grab the single partial's HTML by position rather than a hardcoded key name.
+        html = next(iter(data.values()))
 
         soup = BeautifulSoup(html, "html.parser")
         rows = []
